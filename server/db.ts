@@ -30,45 +30,66 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 
   try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
     const updateSet: Record<string, unknown> = {};
 
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
+    // Build update set with provided values
+    if (user.name !== undefined) {
+      updateSet.name = user.name;
+    }
+    if (user.email !== undefined) {
+      updateSet.email = user.email || "";
+    }
+    if (user.userType !== undefined) {
+      updateSet.userType = user.userType;
+    }
     if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
       updateSet.lastSignedIn = user.lastSignedIn;
     }
     if (user.role !== undefined) {
-      values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
+    }
+
+    // Prepare insert values
+    const insertValues: any = {
+      openId: user.openId,
+      email: user.email || "",
+      userType: user.userType || "founder",
+    };
+
+    // Add optional fields if provided
+    if (user.name !== undefined) insertValues.name = user.name;
+    if (user.role !== undefined) insertValues.role = user.role;
+    if (user.bio !== undefined) insertValues.bio = user.bio;
+    if (user.avatar !== undefined) insertValues.avatar = user.avatar;
+    if (user.location !== undefined) insertValues.location = user.location;
+    if (user.website !== undefined) insertValues.website = user.website;
+    if (user.level !== undefined) insertValues.level = user.level;
+    if (user.score !== undefined) insertValues.score = user.score;
+    if (user.badges !== undefined) insertValues.badges = user.badges;
+    if (user.projectsCreated !== undefined) insertValues.projectsCreated = user.projectsCreated;
+    if (user.collaborations !== undefined) insertValues.collaborations = user.collaborations;
+    if (user.investments !== undefined) insertValues.investments = user.investments;
+    if (user.earnings !== undefined) insertValues.earnings = user.earnings;
+    if (user.interests !== undefined) insertValues.interests = user.interests;
+    if (user.lastSignedIn !== undefined) insertValues.lastSignedIn = user.lastSignedIn;
+
+    // Set admin role for owner
+    if (user.openId === ENV.ownerOpenId) {
+      insertValues.role = 'admin';
       updateSet.role = 'admin';
     }
 
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
+    // Ensure lastSignedIn is set
+    if (!insertValues.lastSignedIn) {
+      insertValues.lastSignedIn = new Date();
+      updateSet.lastSignedIn = new Date();
     }
 
     if (Object.keys(updateSet).length === 0) {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    await db.insert(users).values(insertValues).onDuplicateKeyUpdate({
       set: updateSet,
     });
   } catch (error) {
