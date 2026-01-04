@@ -5,7 +5,11 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { calculateMatchScore, findTopMatches, saveMatchingHistory } from "./matching";
 import { z } from "zod";
-import { createProjectSchema } from "../shared/validation";
+import {
+  createProjectSchema,
+  updateProjectSchema,
+  configureProjectSchema,
+} from "../shared/validation";
 import { eq, and, or, gte, lte, desc, asc } from "drizzle-orm";
 import {
   projects,
@@ -113,17 +117,7 @@ export const appRouter = router({
 
     // Update project
     update: protectedProcedure
-      .input(
-        z.object({
-          projectId: z.number(),
-          title: z.string().optional(),
-          description: z.string().optional(),
-          status: z.enum(["draft", "active", "paused", "completed", "archived"]).optional(),
-          seekingTeam: z.boolean().optional(),
-          seekingInvestment: z.boolean().optional(),
-          openForCollaboration: z.boolean().optional(),
-        })
-      )
+      .input(updateProjectSchema)
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
@@ -187,16 +181,7 @@ export const appRouter = router({
 
     // Configure project with financial and team data
     configure: protectedProcedure
-      .input(
-        z.object({
-          projectId: z.number(),
-          monthlyBurn: z.number(),
-          runway: z.number(),
-          revenueYear1: z.number().optional(),
-          revenueYear2: z.number().optional(),
-          revenueYear3: z.number().optional(),
-        })
-      )
+      .input(configureProjectSchema)
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
