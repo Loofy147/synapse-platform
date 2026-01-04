@@ -5,6 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { calculateMatchScore, findTopMatches, saveMatchingHistory } from "./matching";
 import { z } from "zod";
+import { createProjectSchema } from "../shared/validation";
 import { eq, and, or, gte, lte, desc, asc } from "drizzle-orm";
 import {
   projects,
@@ -40,17 +41,7 @@ export const appRouter = router({
   projects: router({
     // Create a new project
     create: protectedProcedure
-      .input(
-        z.object({
-          title: z.string().min(3),
-          description: z.string().optional(),
-          problem: z.string(),
-          solution: z.string(),
-          targetMarket: z.string().optional(),
-          stage: z.enum(["idea", "prototype", "running", "scaling"]),
-          tags: z.array(z.string()).optional(),
-        })
-      )
+      .input(createProjectSchema)
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
         if (!db) throw new Error("Database not available");
