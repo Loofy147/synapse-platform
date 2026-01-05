@@ -29,3 +29,12 @@ export const configureProjectSchema = z.object({
     revenueYear2: z.number().positive().optional(),
     revenueYear3: z.number().positive().optional(),
 });
+
+export const getRecommendationsSchema = z.object({
+  limit: z.number().int().positive().max(50).default(10),
+  minScore: z.number().min(0).max(100).default(40),
+});
+
+export const calculateScoreSchema = z.object({
+  projectId: z.number().int().positive(),
+});
