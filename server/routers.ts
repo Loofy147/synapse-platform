@@ -9,6 +9,8 @@ import {
   createProjectSchema,
   updateProjectSchema,
   configureProjectSchema,
+  getRecommendationsSchema,
+  calculateScoreSchema,
 } from "../shared/validation";
 import { eq, and, or, gte, lte, desc, asc } from "drizzle-orm";
 import {
@@ -225,14 +227,14 @@ export const appRouter = router({
   matching: router({
     // Get recommended projects for user
     getRecommendations: protectedProcedure
-      .input(z.object({ limit: z.number().default(10), minScore: z.number().default(40) }))
+      .input(getRecommendationsSchema)
       .query(async ({ ctx, input }) => {
         return await findTopMatches(ctx.user.id, input.limit, input.minScore);
       }),
 
     // Calculate match score between user and project
     calculateScore: protectedProcedure
-      .input(z.object({ projectId: z.number() }))
+      .input(calculateScoreSchema)
       .query(async ({ ctx, input }) => {
         const db = await getDb();
         if (!db) return null;
